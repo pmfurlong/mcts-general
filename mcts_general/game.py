@@ -8,7 +8,7 @@ import typing
 import abc
 from copy import deepcopy
 
-import gym
+import gymnasium as gym
 
 from mcts_general.common.wrapper import DeepCopyableWrapper, DiscreteActionWrapper
 
@@ -86,8 +86,8 @@ class GymGame(DeepCopyableGame, metaclass=abc.ABCMeta):
         self.render_copy = None
         super(GymGame, self).__init__(seed)
 
-    def reset(self):
-        return self.env.reset()
+    def reset(self,seed=None):
+        return self.env.reset(seed=seed)
 
     def close(self):
         self.env.close()
@@ -95,18 +95,21 @@ class GymGame(DeepCopyableGame, metaclass=abc.ABCMeta):
             self.render_copy.close()
 
     def step(self, action, simulation=False):
-        obs, rew, done, _ = self.env.step(action)
-        return obs, rew, done
+        obs, rew, terminated, truncated, info = self.env.step(action)
+        done = terminated or truncated
+        return obs, rew, done 
 
     def render(self, mode='human', **kwargs):
         # This workaround is necessary because a game / a gym env that is rendering cannot be deepcopied
         if self.render_copy is None:
             self.render_copy = self.get_copy()
-            self.render_copy.env.render(mode, **kwargs)
+#             self.render_copy.env.render(mode, **kwargs)
+            return self.render_copy.env.render()
         else:
             self.render_copy.close()
             self.render_copy = self.get_copy()
-            self.render_copy.env.render(mode, **kwargs)
+#             self.render_copy.env.render(mode, **kwargs)
+            return self.render_copy.env.render()
 
     def get_copy(self) -> "GymGame":
         return GymGame(deepcopy(self.env), seed=self.rand.randint(1e9))
@@ -189,12 +192,12 @@ class GymGameWithMacroActions(DiscreteGymGame):
             reward = 0.
             mac_act = self.macro_actions[action]
             for a in mac_act:
-                obs, rew, done = super(GymGameWithMacroActions, self).step(a)
+                obs, rew, done , _ = super(GymGameWithMacroActions, self).step(a)
                 reward += rew
             reward /= len(mac_act)  # return avg reward on macro action trajectory
         else:
             # in evaluation just take one step
-            obs, reward, done = super(GymGameWithMacroActions, self).step(action)
+            obs, reward, done, _ = super(GymGameWithMacroActions, self).step(action)
 
         return obs, reward, done
 

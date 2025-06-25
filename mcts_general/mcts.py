@@ -40,7 +40,7 @@ def get_roll_out(game: DeepCopyableGame, n, max_depth=None, discount=0.995, do_s
             if done:
                 break
             action = game_copy.sample_action()
-            _, reward, done = game_copy.step(action, simulation=do_simulation_steps)
+            _, reward, done, _ = game_copy.step(action, simulation=do_simulation_steps)
             trajectory_reward += discount * reward
         total_reward += trajectory_reward / (it + 1)
     return total_reward
